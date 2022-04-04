@@ -9,13 +9,22 @@ Each sensor will send a message containing the following information:
 - time in format yyyy-mm-dd hh:mm:ss;
 - name of the city;
 - temperature measured.
+
 Each hour, a time triggered function calculate the average temperature for each major city using the messages stored on the queues. For each queue the function collects the temperature values, calculates the average and uploads the result on a database.
 The database contains the last updated average temperature for each city including information about the date of the measure and the IDs of the IoT devices that provides the data. The item stored within the databased contains the following information:
 - name of the city;
-- time of the computation in format yyyy-mm-dd hh:mm:ss.
+- time of the computation in format yyyy-mm-dd hh:mm:ss;
+- average temperature;
+- ID of the devices that sent the data.
 
-The IoT sensors can fail the temperature measure. In that case the sensor sends an error message on a specific error queue. A message sent on that queue trigger a function that sends an email notifying the device ID that generated the error.
+The IoT sensors can fail the temperature measure. In that case the sensor sends an error message on a specific error queue. 
+A message sent on the error queue trigger a function that uses [IFTT](https://ifttt.com/) to send an email notifying the device ID that generated the error.
 
+<p align="center"><img src="./images/emailError.png"/></p>
+
+The user can get the average temperature of one or more cities using a Python function that reads the values from the database.
+
+<p align="center"><img src="./images/getTemperature.png"/></p>
 
 ## Architecture
 
@@ -24,119 +33,145 @@ The IoT sensors can fail the temperature measure. In that case the sensor sends 
 ## Installation and usage
 
 ### Prerequisites
-1. LocalStack
-	- Docker
-2. AWS CLI
-3. boto3
-	- Python
-	- pip
-	- boto3
+1. [Docker](https://docs.docker.com/get-docker/)
+2. [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+3. [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html)
 
 ### Setting up the environment
-0. Clone the repository
+**0. Clone the repository**
+
 `git clone https://github.com/isislab-unisa/WeatherStation.git`
 
-1. Launch LocalStack
+**1. Launch LocalStack**
+
 `docker run --rm -it -p 4566:4566 -p 4571:4571 localstack/localstack`
 
-2. Create a SQS queue for each city 
-`
-aws sqs create-queue --queue-name Salerno --endpoint-url=http://localhost:4566
+**2. Create a SQS queue for each city**
+
+`aws sqs create-queue --queue-name Salerno --endpoint-url=http://localhost:4566
 aws sqs create-queue --queue-name Caserta --endpoint-url=http://localhost:4566
 aws sqs create-queue --queue-name Napoli --endpoint-url=http://localhost:4566
 aws sqs create-queue --queue-name Avellino --endpoint-url=http://localhost:4566
 aws sqs create-queue --queue-name Benevento --endpoint-url=http://localhost:4566
-aws sqs create-queue --queue-name Errors --endpoint-url=http://localhost:4566
-`
-	- Check that the queues are been correctly created
-	`aws sqs list-queues --endpoint-url=http://localhost:4566`
+aws sqs create-queue --queue-name Errors --endpoint-url=http://localhost:4566`
 
-3. Create the DynamoDB table and populate it
-	1) Use the python code to create the DynamoDB table
-	`python3 settings/createTable.py`
-	2) Check that the tables are been correctly created
-	`aws dynamodb list-tables --endpoint-url=http://localhost:4566`
-	3) Populate the tables with some data
-	`python3 settings/loadData.py`
-	4) Check that the table are been correctly populated using the AWS CLI (*Press q to exit*)
-	`aws dynamodb scan --table-name Campania --endpoint-url=http://localhost:4566`
-	or using the [dynamodb-admin] GUI with the command
-	`DYNAMO_ENDPOINT=http://0.0.0.0:4566 dynamodb-admin`
-	and then going to `http://localhost:8001`.
-
-4. Create the time-triggered Lambda function to store the average temperature of each city 
-	1) Create the role
-	`aws iam create-role --role-name lambdarole --assume-role-policy-document file://settings/role_policy.json --query 'Role.Arn' --endpoint-url=http://localhost:4566`
-
-	2) Attach the policy
-	`aws iam put-role-policy --role-name lambdarole --policy-name lambdapolicy --policy-document file://settings/policy.json --endpoint-url=http://localhost:4566`
-
-	3) Create the zip file
-	`zip avgFunc.zip settings/avgFunc.py`
+- Check that the queues are been correctly created
 	
-	4) Create the function and save the Arn 
-		(it should be something like `arn:aws:lambda:us-east-2:000000000000:function:avgFunc`)
-	`aws lambda create-function --function-name avgFunc --zip-file fileb://avgFunc.zip --handler settings/avgFunc.lambda_handler --runtime python3.6 --role arn:aws:iam::000000000000:role/lambdarole --endpoint-url=http://localhost:4566`
+`aws sqs list-queues --endpoint-url=http://localhost:4566`
 
-	5) Test the function:
-		- simulate the messages sent by some IoT devices
-		`python3 IoTDevices.py`
-		- manually invoke the function (it may take some times)
-		`aws lambda invoke --function-name avgFunc --payload fileb://settings/city.json out --endpoint-url=http://localhost:4566`
-		- check within the table that items are changed (the measure date should be different)
+**3. Create the DynamoDB table and populate it**
+	
+1) Use the python code to create the DynamoDB table
+	
+`python3 settings/createTable.py`
 
-5. Set up a CloudWatch rule to trigger the Lambda function every hour
-	1) Creare the rule and save the Arn (it should be something like `arn:aws:events:us-east-2:000000000000:rule/calculateAvg`)
-	`aws events put-rule --name calculateAvg --schedule-expression 'rate(60 minutes)' --endpoint-url=http://localhost:4566`
+2) Check that the tables are been correctly created
 
-	2) Check that the rule has been correctly created with the frequency wanted
-	`aws events list-rules --endpoint-url=http://localhost:4566`
+`aws dynamodb list-tables --endpoint-url=http://localhost:4566`
+	
+3) Populate the tables with some data
+	
+`python3 settings/loadData.py`
+	
+4) Check that the table are been correctly populated using the AWS CLI (*Press q to exit*)
+	
+`aws dynamodb scan --table-name Campania --endpoint-url=http://localhost:4566`
+	
+or using the [dynamodb-admin] GUI with the command
+	
+`DYNAMO_ENDPOINT=http://0.0.0.0:4566 dynamodb-admin`
+	
+and then going to `http://localhost:8001`.
 
-	3) Add permissions to the rule created 
-	`aws lambda add-permission --function-name avgFunc --statement-id calculateAvg --action 'lambda:InvokeFunction' --principal events.amazonaws.com --source-arn arn:aws:events:us-east-2:000000000000:rule/avgFunc --endpoint-url=http://localhost:4566`
+**4. Create the time-triggered Lambda function to store the average temperature of each city **
+1) Create the role
 
-	4) Add the lambda function to the rule using the JSON file containing the Lambda function Arn
-	`aws events put-targets --rule calculateAvg --targets file://settings/targets.json --endpoint-url=http://localhost:4566`
-	Now every hour the function avgFunc will be triggered.
+`aws iam create-role --role-name lambdarole --assume-role-policy-document file://settings/role_policy.json --query 'Role.Arn' --endpoint-url=http://localhost:4566`
 
+2) Attach the policy
 
-6. Set up the Lambda function triggered by SQS messages that notifies errors in IoT devices via email
+`aws iam put-role-policy --role-name lambdarole --policy-name lambdapolicy --policy-document file://settings/policy.json --endpoint-url=http://localhost:4566`
 
-	1) Create the IFTT Applet
-		1. Go to https://ifttt.com/ and sign-up or log-in if you already have an account.
-		2. On the main page, click *Create* to create a new applet.
-		3. Click "*If This*", type *"webhooks"* in the search bar, and choose the *Webhooks* service.
-		4. Select "*Receive a web request*" and write *"email_error"* in the "*Event Name*" field. Save the event name since it is required to trigger the event. Click *Create trigger*.
-		5. In the applet page click *Then That*, type *"email"* in the search bar, and select *Email*.
-		6. Click *Send me an email* and fill the fields as follow:
-			- *Subject*: 
-		``[WeatherStation] Attention a device encountered an error!``
-			- *Body*: 
-		``A device of WeatherStation generated an error.<br> 
+3) Create the zip file
+
+`zip avgFunc.zip settings/avgFunc.py`
+	
+4) Create the function and save the Arn (it should be something like `arn:aws:lambda:us-east-2:000000000000:function:avgFunc`)
+
+`aws lambda create-function --function-name avgFunc --zip-file fileb://avgFunc.zip --handler settings/avgFunc.lambda_handler --runtime python3.6 --role arn:aws:iam::000000000000:role/lambdarole --endpoint-url=http://localhost:4566`
+
+5) Test the function:
+- simulate the messages sent by some IoT devices
+
+`python3 IoTDevices.py`
+
+- manually invoke the function (it may take some times)
+
+`aws lambda invoke --function-name avgFunc --payload fileb://settings/city.json out --endpoint-url=http://localhost:4566`
+	
+- check within the table that items are changed (the measure date should be different)
+
+**5. Set up a CloudWatch rule to trigger the Lambda function every hour**
+1) Creare the rule and save the Arn (it should be something like `arn:aws:events:us-east-2:000000000000:rule/calculateAvg`)
+
+`aws events put-rule --name calculateAvg --schedule-expression 'rate(60 minutes)' --endpoint-url=http://localhost:4566`
+
+2) Check that the rule has been correctly created with the frequency wanted
+
+`aws events list-rules --endpoint-url=http://localhost:4566`
+
+3) Add permissions to the rule created 
+
+`aws lambda add-permission --function-name avgFunc --statement-id calculateAvg --action 'lambda:InvokeFunction' --principal events.amazonaws.com --source-arn arn:aws:events:us-east-2:000000000000:rule/avgFunc --endpoint-url=http://localhost:4566`
+
+4) Add the lambda function to the rule using the JSON file containing the Lambda function Arn
+
+`aws events put-targets --rule calculateAvg --targets file://settings/targets.json --endpoint-url=http://localhost:4566`
+
+Now every hour the function avgFunc will be triggered.
+
+**6. Set up the Lambda function triggered by SQS messages that notifies errors in IoT devices via email**
+
+1) Create the IFTT Applet
+	1. Go to https://ifttt.com/ and sign-up or log-in if you already have an account.
+	2. On the main page, click *Create* to create a new applet.
+	3. Click "*If This*", type *"webhooks"* in the search bar, and choose the *Webhooks* service.
+	4. Select "*Receive a web request*" and write *"email_error"* in the "*Event Name*" field. Save the event name since it is required to trigger the event. Click *Create trigger*.
+	5. In the applet page click *Then That*, type *"email"* in the search bar, and select *Email*.
+	6. Click *Send me an email* and fill the fields as follow:
+		- *Subject*: 
+		`[WeatherStation] Attention a device encountered an error!`
+		- *Body*: 
+		`A device of WeatherStation generated an error.<br> 
 Device {{Value1}} got an error at {{Value2}} <br>
-Sent by WeatherStation.``
-		7. Click *Create action*, *Continue*, and *Finish*.
+Sent by WeatherStation.`
+	7. Click *Create action*, *Continue*, and *Finish*.
 
-	2) Modify the variable `key` within the `emailError.py` function with your IFTT applet key. The key can be find clicking on the icon of the webhook and clicking on *Documentation*.
+2) Modify the variable `key` within the `emailError.py` function with your IFTT applet key. The key can be find clicking on the icon of the webhook and clicking on *Documentation*.
 
-	3) Zip the Python file and create the Lambda function
-	`zip emailError.zip settings/emailError.py
-	aws lambda create-function --function-name emailError --zip-file fileb://emailError.zip --handler settings/emailError.lambda_handler --runtime python3.6 --role arn:aws:iam::000000000000:role/lambdarole --endpoint-url=http://localhost:4566
-	`
+3) Zip the Python file and create the Lambda function
 
-	4) Create the event source mapping between the funcion and the queue
-	`aws lambda create-event-source-mapping --function-name emailError --batch-size 5 --maximum-batching-window-in-seconds 60 --event-source-arn arn:aws:sqs:us-east-2:000000000000:Errors --endpoint-url=http://localhost:4566`
+`zip emailError.zip settings/emailError.py
+aws lambda create-function --function-name emailError --zip-file fileb://emailError.zip --handler settings/emailError.lambda_handler --runtime python3.6 --role arn:aws:iam::000000000000:role/lambdarole --endpoint-url=http://localhost:4566`
 
-	5) Test the mapping sending a message on the error queue and check that an email is sent
-	`aws sqs send-message --queue-url http://localhost:4566/000000000000/Errors --message-body '{"device_id": "test_error","error_date": "test"}' --endpoint-url=http://localhost:4566`
+4) Create the event source mapping between the funcion and the queue
+
+`aws lambda create-event-source-mapping --function-name emailError --batch-size 5 --maximum-batching-window-in-seconds 60 --event-source-arn arn:aws:sqs:us-east-2:000000000000:Errors --endpoint-url=http://localhost:4566`
+
+5) Test the mapping sending a message on the error queue and check that an email is sent
+
+`aws sqs send-message --queue-url http://localhost:4566/000000000000/Errors --message-body '{"device_id": "test_error","error_date": "test"}' --endpoint-url=http://localhost:4566`
 
 ### Use it
 1. Simulate the IoT devices
+
 `python3 IoTdevices.py`
+
 2. Wait that the average Lambda function compute the average or invoke it manually
+
 3. Get the average temperature of the city of interest
+
 `python3 getTemperature.py`
-[image]
 
 ## Future work
-- Implement a more user-friendly way to get the temperature of some city.
+- Implement a more user-friendly interface to get the temperature of cities.
