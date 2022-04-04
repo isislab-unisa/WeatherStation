@@ -26,6 +26,10 @@ The user can get the average temperature of one or more cities using a Python fu
 
 <p align="center"><img src="./images/getTemperature.png"/></p>
 
+The IoT devices and the AWS environment are simulated.
+A Python function simulates the sensors sending messages on the queues.
+[LocalStack](https://localstack.cloud/) is used to replicate the AWS services to build the Cloud environment.
+
 ## Architecture
 
 <p align="center"><img src="./images/architecture.png"/></p>
@@ -42,7 +46,7 @@ The user can get the average temperature of one or more cities using a Python fu
 
 `git clone https://github.com/isislab-unisa/WeatherStation.git`
 
-**1. Launch LocalStack**
+**1. Launch [LocalStack](https://localstack.cloud/)**
 
 `docker run --rm -it -p 4566:4566 -p 4571:4571 localstack/localstack`
 
