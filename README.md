@@ -1,17 +1,21 @@
-# Temperature meter with Serverless computing
+# Weather Station using Serverless computing
 
 ## Overview
-The application is a simple ....
-
-A function simulates several IoT devices spread around Campania. Each device measures the temperature every hour and send the value to a SQS queue. Each major city has its own queue and several devices.
-
-A time-triggered function calculate the average temperature for each major city every hour. The function read the messages on each queue, calculate the average temperature, and upload it into a database.
-
-
+WeatherStation is a weather station simulator that measure the temperature of the major cities of Campania in Italy. 
+The project is based on an IoT Cloud architecture where several IoT sensors collect the data and send them on Cloud where they are processed and stored to be easily accessible.
+The IoT sensors are placed near each major city of Campania region to measure its temperature. Each sensor send a message with the temperature value on the SQS queue related to its city. One queue exists for each city.
 Each sensor will send a message containing the following information:
 - ID of the sensor;
-- time in format hh:mm:dd:mm:aa;
+- time in format yyyy-mm-dd hh:mm:ss;
+- name of the city;
 - temperature measured.
+Each hour, a time triggered function calculate the average temperature for each major city using the messages stored on the queues. For each queue the function collects the temperature values, calculates the average and uploads the result on a database.
+The database contains the last updated average temperature for each city including information about the date of the measure and the IDs of the IoT devices that provides the data. The item stored within the databased contains the following information:
+- name of the city;
+- time of the computation in format yyyy-mm-dd hh:mm:ss.
+
+The IoT sensors can fail the temperature measure. In that case the sensor sends an error message on a specific error queue. A message sent on that queue trigger a function that sends an email notifying the device ID that generated the error.
+
 
 ## Architecture
 
