@@ -8,8 +8,6 @@ A function simulates several IoT devices spread around Campania. Each device mea
 A time-triggered function calculate the average temperature for each major city every hour. The function read the messages on each queue, calculate the average temperature, and upload it into a database.
 
 
-
-
 Each sensor will send a message containing the following information:
 - ID of the sensor;
 - time in format hh:mm:dd:mm:aa;
@@ -17,7 +15,7 @@ Each sensor will send a message containing the following information:
 
 ## Architecture
 
-[image]
+<p align="center"><img src="./images/architecture.png"/></p>
 
 ## Installation and usage
 
