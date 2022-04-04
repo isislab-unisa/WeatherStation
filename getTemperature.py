@@ -23,3 +23,4 @@ for city in cities:
 	print("-measured at %s" 
 		% (response['Item']['measure_date']))
 	print("--based on the following devices", response['Item']['device_id'])
+	print("------------------------------------------------------------------------------------------------")
