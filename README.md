@@ -2,23 +2,24 @@
 
 ## Overview
 WeatherStation is a weather station simulator that measure the temperature of the major cities of Campania in Italy. 
-The project is based on an IoT Cloud architecture where several IoT sensors collect the data and send them on Cloud where they are processed and stored to be easily accessible.
-The IoT sensors are placed near each major city of Campania region to measure its temperature. Each sensor send a message with the temperature value on the SQS queue related to its city. One queue exists for each city.
+The project is based on an IoT Cloud architecture where several IoT sensors collect the data and send them on Cloud where they are processed through Serverless Computing and stored in a NoSQL database to be easily accessible.
+
+The IoT sensors are placed near each major city of Campania region to measure its temperature. Each sensor send a message with the temperature value on the queue related to its city. One queue exists for each city.
 Each sensor will send a message containing the following information:
 - ID of the sensor;
 - time in format yyyy-mm-dd hh:mm:ss;
 - name of the city;
 - temperature measured.
 
-Each hour, a time triggered function calculate the average temperature for each major city using the messages stored on the queues. For each queue the function collects the temperature values, calculates the average and uploads the result on a database.
-The database contains the last updated average temperature for each city including information about the date of the measure and the IDs of the IoT devices that provides the data. The item stored within the databased contains the following information:
+Each hour, a time triggered Servereless function calculates the average temperature for each major city using the messages stored on the queues. For each queue, the function collects the temperature values, calculates the average and uploads the result on a NoSQL database.
+The database contains the last updated average temperature for each city, including information about the date of the measure and the IDs of the IoT devices that provides the data. The item stored within the databased contains the following information:
 - name of the city;
 - time of the computation in format yyyy-mm-dd hh:mm:ss;
 - average temperature;
 - ID of the devices that sent the data.
 
 The IoT sensors can fail the temperature measure. In that case the sensor sends an error message on a specific error queue. 
-A message sent on the error queue trigger a function that uses [IFTT](https://ifttt.com/) to send an email notifying the device ID that generated the error.
+A message sent on the error queue trigger a Serverless function that sends an email notifying the device ID that generated the error.
 
 <p align="center"><img src="./images/emailError.png"/></p>
 
@@ -26,13 +27,18 @@ The user can get the average temperature of one or more cities using a Python fu
 
 <p align="center"><img src="./images/getTemperature.png"/></p>
 
-The IoT devices and the AWS environment are simulated.
-A Python function simulates the sensors sending messages on the queues.
-[LocalStack](https://localstack.cloud/) is used to replicate the AWS services to build the Cloud environment.
-
 ## Architecture
 
 <p align="center"><img src="./images/architecture.png"/></p>
+
+- The Cloud environment is simulated using [LocalStack](https://localstack.cloud/) to replicate the [AWS services](https://aws.amazon.com/).
+- The IoT devices are simulated using a Python function exploiting [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html) to send messages on the queues.
+- The queue are implemented using [Amazon Simple Queue Service (SQS)](https://aws.amazon.com/sqs/).
+- The database is built using [Amazon DynamoDB](https://aws.amazon.com/dynamodb/).
+- The functions are Serveless functions deployed on [AWS Lambda](https://aws.amazon.com/lambda/).
+- The time-triggered function is implemented using [Amazon EventBridge](https://aws.amazon.com/eventbridge/).
+- The email is sent using [IFTT](https://ifttt.com/).
+- The DynamoDB GUI is available using [dynamodb-admin](https://github.com/aaronshaf/dynamodb-admin).
 
 ## Installation and usage
 
@@ -40,6 +46,7 @@ A Python function simulates the sensors sending messages on the queues.
 1. [Docker](https://docs.docker.com/get-docker/)
 2. [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 3. [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html)
+4. *(Optional)* nodejs for database visualization. 
 
 ### Setting up the environment
 **0. Clone the repository**
