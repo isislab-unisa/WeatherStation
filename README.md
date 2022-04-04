@@ -48,12 +48,12 @@ The user can get the average temperature of one or more cities using a Python fu
 
 **2. Create a SQS queue for each city**
 
-`aws sqs create-queue --queue-name Salerno --endpoint-url=http://localhost:4566
-aws sqs create-queue --queue-name Caserta --endpoint-url=http://localhost:4566
-aws sqs create-queue --queue-name Napoli --endpoint-url=http://localhost:4566
-aws sqs create-queue --queue-name Avellino --endpoint-url=http://localhost:4566
-aws sqs create-queue --queue-name Benevento --endpoint-url=http://localhost:4566
-aws sqs create-queue --queue-name Errors --endpoint-url=http://localhost:4566`
+`aws sqs create-queue --queue-name Salerno --endpoint-url=http://localhost:4566`
+`aws sqs create-queue --queue-name Caserta --endpoint-url=http://localhost:4566`
+`aws sqs create-queue --queue-name Napoli --endpoint-url=http://localhost:4566`
+`aws sqs create-queue --queue-name Avellino --endpoint-url=http://localhost:4566`
+`aws sqs create-queue --queue-name Benevento --endpoint-url=http://localhost:4566`
+`aws sqs create-queue --queue-name Errors --endpoint-url=http://localhost:4566`
 
 - Check that the queues are been correctly created
 	
@@ -143,16 +143,16 @@ Now every hour the function avgFunc will be triggered.
 		`[WeatherStation] Attention a device encountered an error!`
 		- *Body*: 
 		`A device of WeatherStation generated an error.<br> 
-Device {{Value1}} got an error at {{Value2}} <br>
-Sent by WeatherStation.`
+		Device {{Value1}} got an error at {{Value2}} <br>
+		Sent by WeatherStation.`
 	7. Click *Create action*, *Continue*, and *Finish*.
 
 2) Modify the variable `key` within the `emailError.py` function with your IFTT applet key. The key can be find clicking on the icon of the webhook and clicking on *Documentation*.
 
 3) Zip the Python file and create the Lambda function
 
-`zip emailError.zip settings/emailError.py
-aws lambda create-function --function-name emailError --zip-file fileb://emailError.zip --handler settings/emailError.lambda_handler --runtime python3.6 --role arn:aws:iam::000000000000:role/lambdarole --endpoint-url=http://localhost:4566`
+`zip emailError.zip settings/emailError.py`
+`aws lambda create-function --function-name emailError --zip-file fileb://emailError.zip --handler settings/emailError.lambda_handler --runtime python3.6 --role arn:aws:iam::000000000000:role/lambdarole --endpoint-url=http://localhost:4566`
 
 4) Create the event source mapping between the funcion and the queue
 
