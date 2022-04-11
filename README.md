@@ -99,7 +99,7 @@ or using the [dynamodb-admin] GUI with the command
 	
 and then going to `http://localhost:8001`.
 
-**4. Create the time-triggered Lambda function to store the average temperature of each city **
+**4. Create the time-triggered Lambda function to store the average temperature of each city**
 1) Create the role
 
 `aws iam create-role --role-name lambdarole --assume-role-policy-document file://settings/role_policy.json --query 'Role.Arn' --endpoint-url=http://localhost:4566`
