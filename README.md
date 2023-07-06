@@ -42,6 +42,9 @@ The user can get the average temperature of one or more cities using a Python fu
 
 ## Installation and usage
 
+### Current issue
+**[LocalStack](https://github.com/localstack/localstack/issues/8432)**
+
 ### Prerequisites
 1. [Docker](https://docs.docker.com/get-docker/)
 2. [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
