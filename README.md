@@ -1,7 +1,7 @@
 # Weather Station using Serverless computing
 
 ## Overview
-WeatherStation is a weather station simulator that measure the temperature of the major cities of Campania in Italy. 
+WeatherStation is a weather station simulator that measures the temperature of the major cities of Campania in Italy. 
 The project is based on an IoT Cloud architecture where several IoT sensors collect the data and send them on Cloud where they are processed through Serverless Computing and stored in a NoSQL database to be easily accessible.
 
 The IoT sensors are placed near each major city of Campania region to measure its temperature. Each sensor send a message with the temperature value on the queue related to its city. One queue exists for each city.
@@ -33,7 +33,7 @@ The user can get the average temperature of one or more cities using a Python fu
 
 - The Cloud environment is simulated using [LocalStack](https://localstack.cloud/) to replicate the [AWS services](https://aws.amazon.com/).
 - The IoT devices are simulated using a Python function exploiting [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html) to send messages on the queues.
-- The queue are implemented using [Amazon Simple Queue Service (SQS)](https://aws.amazon.com/sqs/).
+- The queue is implemented using [Amazon Simple Queue Service (SQS)](https://aws.amazon.com/sqs/).
 - The database is built using [Amazon DynamoDB](https://aws.amazon.com/dynamodb/).
 - The functions are Serveless functions deployed on [AWS Lambda](https://aws.amazon.com/lambda/).
 - The time-triggered function is implemented using [Amazon EventBridge](https://aws.amazon.com/eventbridge/).
@@ -44,7 +44,8 @@ The user can get the average temperature of one or more cities using a Python fu
 
 ### Current issue
 **[LocalStack](https://github.com/localstack/localstack/issues/8432)**
-**Error with python 3.6**: if you get an error while running functions with Python 3.6, just use Python 3.8 instead. Python 3.6 was deprecated.
+
+**Error with Python 3.6**: if you get an error while running functions with Python 3.6, just use Python 3.8 instead. Python 3.6 was deprecated.
 
 ### Prerequisites
 1. [Docker](https://docs.docker.com/get-docker/)
@@ -53,7 +54,7 @@ The user can get the average temperature of one or more cities using a Python fu
 4. *(Optional)* nodejs for database visualization. 
 
 ### Setting up the environment
-**0. Clone the repository and configure AWS cli**
+**0. Clone the repository and configure AWS CLI**
 
 `git clone https://github.com/isislab-unisa/WeatherStation.git`
 
@@ -77,7 +78,7 @@ Run `aws configure` providing values like `AWS Access Key ID [None]: test`, `AWS
 
 `aws sqs create-queue --queue-name Errors --endpoint-url=http://localhost:4566`
 
-- Check that the queues are been correctly created
+- Check that the queues have been correctly created
 	
 `aws sqs list-queues --endpoint-url=http://localhost:4566`
 
@@ -87,7 +88,7 @@ Run `aws configure` providing values like `AWS Access Key ID [None]: test`, `AWS
 	
 `python3 settings/createTable.py`
 
-2) Check that the tables are been correctly created
+2) Check that the tables have been correctly created
 
 `aws dynamodb list-tables --endpoint-url=http://localhost:4566`
 	
@@ -95,7 +96,7 @@ Run `aws configure` providing values like `AWS Access Key ID [None]: test`, `AWS
 	
 `python3 settings/loadData.py`
 	
-4) Check that the table are been correctly populated using the AWS CLI (*Press q to exit*)
+4) Check that the table has been correctly populated using the AWS CLI (*Press q to exit*)
 	
 `aws dynamodb scan --table-name Campania --endpoint-url=http://localhost:4566`
 	
@@ -127,7 +128,7 @@ and then going to `http://localhost:8001`.
 
 `python3 IoTDevices.py`
 
-- manually invoke the function (it may take some times)
+- manually invoke the function (it may take some time)
 
 `aws lambda invoke --function-name avgFunc --payload fileb://settings/city.json out --endpoint-url=http://localhost:4566`
 	
@@ -150,7 +151,7 @@ and then going to `http://localhost:8001`.
 
 `aws events put-targets --rule calculateAvg --targets file://settings/targets.json --endpoint-url=http://localhost:4566`
 
-Now every hour the function avgFunc will be triggered.
+Now, every hour, the function avgFunc will be triggered.
 
 **6. Set up the Lambda function triggered by SQS messages that notifies errors in IoT devices via email**
 
@@ -160,7 +161,7 @@ Now every hour the function avgFunc will be triggered.
 	3. Click "*If This*", type *"webhooks"* in the search bar, and choose the *Webhooks* service.
 	4. Select "*Receive a web request*" and write *"email_error"* in the "*Event Name*" field. Save the event name since it is required to trigger the event. Click *Create trigger*.
 	5. In the applet page click *Then That*, type *"email"* in the search bar, and select *Email*.
-	6. Click *Send me an email* and fill the fields as follow:
+	6. Click *Send me an email* and fill in the fields as follows:
 - *Subject*: `[WeatherStation] Attention a device encountered an error!`
 		
 - *Body*: `A device of WeatherStation generated an error.<br> Device {{Value1}} got an error at {{Value2}} <br> Sent by WeatherStation.`
@@ -175,11 +176,11 @@ Now every hour the function avgFunc will be triggered.
 
 `aws lambda create-function --function-name emailError --zip-file fileb://emailError.zip --handler settings/emailError.lambda_handler --runtime python3.6 --role arn:aws:iam::000000000000:role/lambdarole --endpoint-url=http://localhost:4566`
 
-4) Create the event source mapping between the funcion and the queue
+4) Create the event source mapping between the function and the queue
 
 `aws lambda create-event-source-mapping --function-name emailError --batch-size 5 --maximum-batching-window-in-seconds 60 --event-source-arn arn:aws:sqs:us-east-2:000000000000:Errors --endpoint-url=http://localhost:4566`
 
-5) Test the mapping sending a message on the error queue and check that an email is sent
+5) Test the mapping by sending a message on the error queue and check that an email is sent
 
 `aws sqs send-message --queue-url http://localhost:4566/000000000000/Errors --message-body '{"device_id": "test_error","error_date": "test"}' --endpoint-url=http://localhost:4566`
 
@@ -188,7 +189,7 @@ Now every hour the function avgFunc will be triggered.
 
 `python3 IoTdevices.py`
 
-2. Wait that the average Lambda function compute the average or invoke it manually
+2. Wait for the average Lambda function to compute the average or invoke it manually
 
 3. Get the average temperature of the city of interest
 
