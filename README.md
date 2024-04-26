@@ -44,6 +44,7 @@ The user can get the average temperature of one or more cities using a Python fu
 
 ### Current issue
 **[LocalStack](https://github.com/localstack/localstack/issues/8432)**
+**Error with python 3.6**: if you get an error while running functions with Python 3.6, just use Python 3.8 instead. Python 3.6 was deprecated.
 
 ### Prerequisites
 1. [Docker](https://docs.docker.com/get-docker/)
