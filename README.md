@@ -52,9 +52,11 @@ The user can get the average temperature of one or more cities using a Python fu
 4. *(Optional)* nodejs for database visualization. 
 
 ### Setting up the environment
-**0. Clone the repository**
+**0. Clone the repository and configure AWS cli**
 
 `git clone https://github.com/isislab-unisa/WeatherStation.git`
+
+Run `aws configure` providing values like `AWS Access Key ID [None]: test`, `AWS Secret Access Key [None]: test`, `Default region name [None]: us-east-2`, `Default output format [None]: json`.
 
 **1. Launch [LocalStack](https://localstack.cloud/)**
 
